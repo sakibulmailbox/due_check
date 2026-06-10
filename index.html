@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Student Due Info</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* [সংশোধিত স্টাইল] */
+        /* --- কালার কনফিগারেশন: সাদা রং ঘীয়া-তে পরিবর্তন --- */
+        :root {
+            --color-white: #f8f8e8; /* ঘীয়া কালার (Off-White/Creamy) */
+            --color-primary: #1a73e8; /* Blue */
+            --color-secondary: #333; /* Dark Gray */
+            --color-light-header: #e8f0fe; /* Light blue for header and total row */
+            --color-header-text: #1a73e8; /* Primary blue for header text */
+            --color-error: #e74c3c;
+        }
+
+        /* Base Styles - Student Page */
+        body { font-family: Arial, sans-serif; margin:0; padding:15px; background:#f0f2f5; color:#111; }
+        h2, h3 { text-align:center; margin:5px 0; font-weight:600; }
+        h2 { color:var(--color-primary); }
+        h3 { color:#333; font-size:1.05em; }
+        .row { display:flex; align-items:center; margin:8px 0; flex-wrap:wrap; background:var(--color-white); /* White to Ghiya */ padding:8px; border-radius:8px; box-shadow:0 2px 4px rgba(0,0,0,0.06);}
+        .row label { margin-right:8px; font-size:0.95em; color:#333; min-width:95px; }
+        .row input, .row select { padding:6px; flex:1; min-width:120px; border-radius:6px; border:1px solid #ccc; font-size:0.95em; }
+        button { padding:6px 12px; margin:3px; cursor:pointer; font-size:0.95em; border:none; border-radius:6px; background:var(--color-primary); color:white; transition:0.18s; }
+        button:hover { background:#155ab6; }
+        table { width:100%; border-collapse:collapse; margin-top:10px; display:none; background:var(--color-white); /* White to Ghiya */ border-radius:8px; overflow:hidden; box-shadow:0 2px 6px rgba(0,0,0,0.06);}
+        table, th, td { border:1px solid #ddd; text-align:center; }
+        th, td { padding:8px; font-size:0.88em; }
+        th { background:var(--color-light-header); color:var(--color-primary); }
+        td:first-child { font-weight:600; text-align:left; padding-left:12px; }
+        #nameRow { display:none; margin-top:5px; }
+        footer { text-align:center; margin-top:15px; font-size:11px; color:gray; }
+        .table2-controls { display:flex; justify-content:flex-end; margin-top:5px; }
+        #loadingMsg { position:fixed; top:18%; left:50%; transform:translateX(-50%); background:var(--color-white); /* White to Ghiya */ border:1px solid #ccc; padding:18px 22px; z-index:1000; text-align:center; font-size:13.5px; display:none; border-radius:10px; box-shadow:0 6px 18px rgba(0,0,0,0.12);}
+        #clock, #countdown { font-weight:bold; font-size:13px; }
+        @media (max-width:480px){
+            .row{flex-direction:column; align-items:stretch;}
+            .row label{margin-bottom:6px;}
+            button{width:100%; margin:6px 0;}
+            table, th, td{font-size:0.75em;}
+        }
+        .fee-table-container, .payment-table-container { overflow-x:auto; }
+
+        /* --- নোটিশ বক্স স্টাইল (সংশোধিত) --- */
+        #noticeBox {
+            background-color: var(--color-primary); /* নীল ব্যাকগ্রাউন্ড */
+            border: 1px solid #155ab6; /* নীল বর্ডার */
+            padding: 10px;
+            margin: 10px auto;
+            border-radius: 6px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            max-width: 100%;
+            box-sizing: border-box;
+            display: none;
+            color: var(--color-white); /* লেখা ঘীয়া/সাদা */
+            font-weight: 500;
+            font-size: 15px;
+            overflow-wrap: break-word;
+            text-align: center; 
+        }
+        #noticeBox h4 {
+            margin: 0 0 5px 0;
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--color-white); /* লেখা ঘীয়া/সাদা */
+            border-bottom: 1px dashed #ffffff70; /* হালকা সাদা ড্যাশড লাইন */
+            padding-bottom: 5px;
+            text-align: center;
+        }
+        #noticeBox p {
+            color: var(--color-white); /* লেখা ঘীয়া/সাদা */
+            margin: 0;
+        }
+
+        /* New Payment History Table Formatting */
+        #paymentTable th { background: #f0f8ff; color: #007bff; }
+        #paymentTable tr:nth-child(even) { background-color: #f9f9f9; }
+        #paymentTable tr:hover { background-color: #eaf6ff; }
+        #paymentTable tfoot tr { font-weight: bold; background-color: var(--color-light-header); }
+
+        /* Popup Message Styles */
+        #popupContainer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+        #popupBox {
+            background: var(--color-white); /* White to Ghiya */
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            max-width: 300px;
+            width: 90%;
+        }
+        #popupBox p {
+            margin: 0 0 15px 0;
+            font-size: 16px;
+        }
+        #popupOkBtn {
+            background: var(--color-primary);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        #popupOkBtn:hover {
+            background: #155ab6;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="mainInterface">
+        <h2>UCEP Robertsongonj Technical School</h2>
+        <h3>Student Due Information-26</h3>
+        
+        <div class="row" id="classRow">
+            <label>Class:</label>
+            <select id="classSelect">
+                <option value="VIA_1st">VIA_1st</option>
+                <option value="VIB_1st">VIB_1st</option>
+                <option value="VIIA_1st">VIIA_1st</option>
+                <option value="VIIB_1st">VIIB_1st</option>
+                <option value="VIIIA_1st">VIIIA_1st</option>
+                <option value="VIIIB_1st">VIIIB_1st</option>
+                <option value="IXA_1st">IXA_1st</option>
+                <option value="IXB_1st">IXB_1st</option>
+                <option value="IXC_1st">IXC_1st</option>
+                <option value="X (ICT)1st">X (ICT)1st</option>
+                <option value="X (GEW)1st">X (GEW)1st</option> <option value="X (EMW)1st">X (EMW)1st</option>
+                <option value="SSC-26 (ICT)1st">SSC-26 (ICT)1st</option>
+                <option value="SSC-26 (GEW)1st">SSC-26 (GEW)1st</option>
+                <option value="SSC-26 (EMW)1st">SSC-26 (EMW)1st</option>
+            </select>
+        </div>
+        
+        <div class="row" id="rollRow">
+            <label>Roll Number:</label>
+            <input type="number" id="rollInput" placeholder="Enter Roll">
+        </div>
+        
+        <div class="row" style="justify-content:center;" id="searchRow">
+            <button onclick="searchData()">Search</button>
+            <button onclick="clearData()">Clear</button>
+        </div>
+        
+        <div id="noticeBox">
+            <h4>নোটিশ 🔔</h4>
+            <p id="noticeContent"></p>
+        </div>
+        
+        <div class="row" id="nameRow">
+            <label>Name:</label>
+            <input type="text" id="nameField" readonly>
+        </div>
+        
+        <div class="fee-table-container">
+            <table id="feeTable" aria-label="Fee table">
+                <tr><th>Fee Details</th><th>Target Tk.</th><th>Paid Tk.</th><th>Due Tk.</th></tr>
+                <tr><td>Admission fees</td><td id="B2">-</td><td id="C2">-</td><td id="D2">-</td></tr>
+                <tr><td>Session fees</td><td id="B3">-</td><td id="C3">-</td><td id="D3">-</td></tr>
+                <tr><td>Tuition fees</td><td id="B4">-</td><td id="C4">-</td><td id="D4">-</td></tr>
+                <tr><td>ICT fees</td><td id="B5">-</td><td id="C5">-</td><td id="D5">-</td></tr>
+                <tr><td>Annual Sports fees</td><td id="B6">-</td><td id="C6">-</td><td id="D6">-</td></tr>
+                <tr><td>Registration fees</td><td id="B7">-</td><td id="C7">-</td><td id="D7">-</td></tr>
+                <tr><td>Form fill up fees</td><td id="B8">-</td><td id="C8">-</td><td id="D8">-</td></tr>
+                <tr><td>Exam fees</td><td id="B9">-</td><td id="C9">-</td><td id="D9">-</td></tr>
+                <tr><td>Money Receipt Book</td><td id="B10">-</td><td id="C10">-</td><td id="D10">-</td></tr>
+                <tr style="font-weight:bold;background:#f7f7f7;"><td>Total</td><td id="B11">-</td><td id="C11">-</td><td id="D11">-</td></tr>
+            </table>
+        </div>
+        
+        <div style="margin-top:10px; text-align:center;" id="paymentBtnRow" hidden>
+            <button onclick="viewPaymentHistory()">Payment Details</button>
+        </div>
+        
+        <div class="payment-table-container">
+            <h3 id="paymentHeader" style="display:none; margin-top:15px;">Payment History</h3>
+            <table id="paymentTable" aria-label="Payment history">
+                <thead>
+                    <tr>
+                        <th>MR No.</th><th>Date</th><th>Admission</th><th>Session fee</th><th>Tuition fee</th><th>ICT</th><th>Sports</th><th>MR book</th><th>Registration</th><th>Form fill up</th><th>Exam</th><th>Others</th><th>Total</th>
+                    </tr>
+                </thead>
+                <tbody id="paymentBody"></tbody>
+                <tfoot id="paymentFooter"></tfoot>
+            </table>
+        </div>
+        
+        <div style="text-align:center; margin-top:8px;">
+            <button id="closePaymentBtn" style="display:none;" onclick="closePayment()">Close</button>
+        </div>
+        
+        <table id="table2" aria-label="All students">
+            <thead><tr><th>Roll</th><th>Name</th><th>Target</th><th>Paid</th><th>Due</th></tr></thead>
+            <tbody id="table2Body"></tbody>
+        </table>
+        
+        <div id="table2Controls" class="table2-controls" style="display:none;">
+            <button onclick="closeTable2()">Close</button>
+        </div>
+
+        <footer>This app is developed by Md. Sakibul Islam.</footer>
+    </div>
+
+    <div id="loadingMsg">
+        <p>অনুগ্রহকরে অপেক্ষা করুন। প্রয়োজনে যোগাযোগ করুন- 01722-666676</p>
+        <p><span id="clock"></span></p>
+    </div>
+
+    <div id="popupContainer">
+        <div id="popupBox">
+            <p>অনুগ্রহ করে আপনার আনলক কী (Unlock Key) দিন।</p>
+            <button id="popupOkBtn" onclick="okButtonClick()">OK</button>
+        </div>
+    </div>
+
+    <script>
+        const SHEET_ID = "1_UnACuEe2B4X0GrHpQt4l8t8Hb7a7H9H";
+        const SHEET_NAME = "app data";
+        const GID = 0;
+        const sheetUrl = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json`;
+        
+        // --- নোটিশের জন্য কনফিগারেশন ---
+        const NOTICE_SHEET_ID = "1JvWsz_hHtKBTkNlUn4dRgg5A-EttlXstrYVYMeJ7DmA";
+        const NOTICE_GID = 1364247966;
+        const NOTICE_API_URL = `https://docs.google.com/spreadsheets/d/${NOTICE_SHEET_ID}/gviz/tq?tqx=out:json&gid=${NOTICE_GID}`;
+
+        let allData = [];
+        let noticeTimer = null;
+
+        window.onload = function() {
+            fetchNotice();
+            fetchStudentData();
+        };
+
+        function fetchNotice() {
+            fetch(NOTICE_API_URL)
+                .then(res => res.text())
+                .then(text => {
+                    const json = JSON.parse(text.substr(47).slice(0, -2));
+                    const rows = json.table.rows;
+                    if(rows && rows.length > 0) {
+                        const activeNotice = rows.find(r => r.c[2] && r.c[2].v === "Active");
+                        if(activeNotice) {
+                            document.getElementById('noticeContent').innerText = activeNotice.c[1].v;
+                            document.getElementById('noticeBox').style.display = 'block';
+                        }
+                    }
+                }).catch(err => console.error("Notice fetch error:", err));
+        }
+
+        function fetchStudentData() {
+            showLoading(true);
+            fetch(sheetUrl)
+                .then(res => res.text())
+                .then(text => {
+                    const json = JSON.parse(text.substr(47).slice(0, -2));
+                    allData = json.table.rows;
+                    showLoading(false);
+                })
+                .catch(err => {
+                    console.error(err);
+                    alert("ডাটা লোড করতে ব্যর্থ হয়েছে। পেজটি রিফ্রেশ করুন।");
+                    showLoading(false);
+                });
+        }
+
+        function searchData() {
+            const selectedClass = document.getElementById('classSelect').value;
+            const rollInput = document.getElementById('rollInput').value.trim();
+
+            if(!rollInput) {
+                alert("অনুগ্রহ করে রোল নম্বর দিন।");
+                return;
+            }
+
+            clearDisplay();
+
+            const studentRow = allData.find(row => {
+                return row.c[0] && row.c[0].v == rollInput && row.c[1] && row.c[1].v === selectedClass;
+            });
+
+            if(!studentRow) {
+                alert("উক্ত রোল এবং ক্লাসের কোনো ডাটা পাওয়া যায়নি।");
+                return;
+            }
+
+            // নাম প্রদর্শন
+            document.getElementById('nameField').value = studentRow.c[2] ? studentRow.c[2].v : '-';
+            document.getElementById('nameRow').style.display = 'flex';
+
+            // ফি টেবিল আপডেট
+            const mappings = {
+                'B2': 4, 'C2': 5, 'D2': 6,     // Admission
+                'B3': 7, 'C3': 8, 'D3': 9,     // Session
+                'B4': 10, 'C4': 11, 'D4': 12,  // Tuition
+                'B5': 13, 'C5': 14, 'D5': 15,  // ICT
+                'B6': 16, 'C6': 17, 'D6': 18,  // Sports
+                'B7': 19, 'C7': 20, 'D7': 21,  // Registration
+                'B8': 22, 'C8': 23, 'D8': 24,  // Form fill up
+                'B9': 25, 'C9': 26, 'D9': 27,  // Exam
+                'B10': 28, 'C10': 29, 'D10': 30,// MR Book
+                'B11': 31, 'C11': 32, 'D11': 33 // Total
+            };
+
+            for(let id in mappings) {
+                const index = mappings[id];
+                document.getElementById(id).innerText = (studentRow.c[index] && studentRow.c[index].v !== null) ? studentRow.c[index].v : 0;
+            }
+
+            document.getElementById('feeTable').style.display = 'table';
+            
+            // পেমেন্ট বাটনের জন্য চেক (MR ১ বা তার বেশি থাকলে)
+            if(studentRow.c[41] && studentRow.c[41].v) {
+                document.getElementById('paymentBtnRow').hidden = false;
+            }
+        }
+
+        function viewPaymentHistory() {
+            const selectedClass = document.getElementById('classSelect').value;
+            const rollInput = document.getElementById('rollInput').value.trim();
+
+            const studentRow = allData.find(row => {
+                return row.c[0] && row.c[0].v == rollInput && row.c[1] && row.c[1].v === selectedClass;
+            });
+
+            if(!studentRow) return;
+
+            const tbody = document.getElementById('paymentBody');
+            tbody.innerHTML = '';
+
+            // পেমেন্ট কলাম ইনডেক্স সমূহ (MR No, Date, Admission, Session, Tuition, ICT, Sports, MR Book, Reg, Form fill up, Exam, Others, Total)
+            const colGroups = [
+                [41,42,4,5,6,10,13,28,19,22,25,34,31], // Set 1
+                [43,45,46,47,48,49,50,51,52,53,54,55,56]  // Set 2 (প্রয়োজন সাপেক্ষে কাঠামো অনুযায়ী)
+            ];
+
+            let hasPayment = false;
+            let totalAdmission=0, totalSession=0, totalTuition=0, totalICT=0, totalSports=0, totalMR=0, totalReg=0, totalForm=0, totalExam=0, totalOthers=0, grandTotal=0;
+
+            // শুধুমাত্র প্রথম সেট (বা এক্সিস্টিং ডাটা স্ট্রাকচার অনুযায়ী লুপ)
+            if(studentRow.c[41] && studentRow.c[41].v) {
+                hasPayment = true;
+                let mr = studentRow.c[41].v;
+                let date = studentRow.c[42] ? studentRow.c[42].f || studentRow.c[42].v : '-';
+                
+                // এক্সিস্টিং ডাটা থেকে পেইড অ্যামাউন্ট রিলিজ (উদাহরণস্বরূপ কারেন্ট সিঙ্গেল রো রিপ্রেজেন্টেশন)
+                let adm = parseFloat(studentRow.c[5]?.v || 0);
+                let ses = parseFloat(studentRow.c[8]?.v || 0);
+                let tui = parseFloat(studentRow.c[11]?.v || 0);
+                let ict = parseFloat(studentRow.c[14]?.v || 0);
+                let spr = parseFloat(studentRow.c[17]?.v || 0);
+                let mrb = parseFloat(studentRow.c[29]?.v || 0);
+                let reg = parseFloat(studentRow.c[20]?.v || 0);
+                let ffu = parseFloat(studentRow.c[23]?.v || 0);
+                let exm = parseFloat(studentRow.c[26]?.v || 0);
+                let oth = parseFloat(studentRow.c[35]?.v || 0); // Others index
+                let tot = parseFloat(studentRow.c[32]?.v || 0);
+
+                totalAdmission+=adm; totalSession+=ses; totalTuition+=tui; totalICT+=ict; totalSports+=spr; totalMR+=mrb; totalReg+=reg; totalForm+=ffu; totalExam+=exm; totalOthers+=oth; grandTotal+=tot;
+
+                tbody.innerHTML += `<tr>
+                    <td>${mr}</td><td>${date}</td><td>${adm}</td><td>${ses}</td><td>${tui}</td><td>${ict}</td><td>${spr}</td><td>${mrb}</td><td>${reg}</td><td>${ffu}</td><td>${exm}</td><td>${oth}</td><td>${tot}</td>
+                </tr>`;
+            }
+
+            if(!hasPayment) {
+                alert("কোনো পেমেন্ট হিস্ট্রি পাওয়া যায়নি।");
+                return;
+            }
+
+            // ফুটার টোটাল রো
+            document.getElementById('paymentFooter').innerHTML = `<tr>
+                <td colspan="2">Total Row</td><td>${totalAdmission}</td><td>${totalSession}</td><td>${totalTuition}</td><td>${totalICT}</td><td>${totalSports}</td><td>${totalMR}</td><td>${totalReg}</td><td>${totalForm}</td><td>${totalExam}</td><td>${totalOthers}</td><td>${grandTotal}</td>
+            </tr>`;
+
+            document.getElementById('paymentHeader').style.display = 'block';
+            document.getElementById('paymentTable').style.display = 'table';
+            document.getElementById('closePaymentBtn').style.display = 'inline-block';
+        }
+
+        function closePayment() {
+            document.getElementById('paymentHeader').style.display = 'none';
+            document.getElementById('paymentTable').style.display = 'none';
+            document.getElementById('closePaymentBtn').style.display = 'none';
+        }
+
+        function clearData() {
+            document.getElementById('rollInput').value = '';
+            clearDisplay();
+        }
+
+        function clearDisplay() {
+            document.getElementById('nameRow').style.display = 'none';
+            document.getElementById('nameField').value = '';
+            document.getElementById('feeTable').style.display = 'none';
+            document.getElementById('paymentBtnRow').hidden = true;
+            document.getElementById('table2').style.display = 'none';
+            document.getElementById('table2Controls').style.display = 'none';
+            closePayment();
+        }
+
+        function showLoading(status) {
+            const loader = document.getElementById('loadingMsg');
+            if(status) {
+                loader.style.display = 'block';
+                clockTimer = setInterval(() => {
+                    document.getElementById('clock').innerText = new Date().toLocaleTimeString();
+                }, 1000);
+            } else {
+                loader.style.display = 'none';
+                clearInterval(clockTimer);
+            }
+        }
+    </script>
+</body>
+</html>
